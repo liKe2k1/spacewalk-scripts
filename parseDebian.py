@@ -76,8 +76,8 @@ class MessageParser(object):
     BIN_PACKAGE_REGEX = '<dt><a href.*?>(?P<package_name>.*?)</a></dt>'
     DIST = "distribution \((?P<dist>.*?)\)"
     VERSION = "version (?P<version>\S+?)(?=\.?( |$))"
-    PKGINFO = "\s+Package\s+:\s(?P<package_info>.*)"
-    MAILING_LIST = "\s+Mailing list:"
+    PKGINFO = "Package\s+:\s(?P<package_info>.*)"
+    MAILING_LIST = "Mailing list:"
     ERRATA_INFO = "_Subject_: \[SECURITY\] \[DSA (?P<errata_id>\d+)-(?P<errata_release>\d+)\] (?P<errata_name>\S+)( (?P<errata_other>.*))?$"
     DATE = "_Date_:\s+(?P<errata_date>.*?)(?=(\s\(.*\))?$)"
     FROM_NAME = "_From_:\s+(?P<errata_from_name>.*) &lt.*$"
