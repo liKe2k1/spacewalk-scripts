@@ -6,11 +6,11 @@
 # Robert Paschedag <robert.paschedag@netlution.de>
 #
 # Changelog:
+# 2019-06-06 - Change Channels for own use
 # 2016-08-08 - Print start of script with debug_level
 # 2016-08-01 - Changed logging
 # 2016-07-27 - Don't publish errata into excludedChannels
 # 2016-05-24 - Initial working version
-
 from __future__ import print_function
 
 import sys
@@ -36,20 +36,14 @@ if option.debug_level is not None and option.debug_level > 0:
 
 # Config Settings#
 filename = '/tmp/debian_security/debian-errata.xml'
-excludedChannels = ['wheezy_main',
-                    'jessie_main',
-                    'stretch_main_main']
-includedChannels = ['jessie_security_main',
-                    'jessie_security_contrib',
-                    'jessie_security_non-free',
-                    'stretch_security_main',
-                    'stretch_security_contrib',
-                    'stretch_security_non-free']
+excludedChannels = ['stretch-amd64']
+includedChannels = ['stretch-amd64-updates',
+                    'stretch-amd64-security']
 # Config Settings#
 
-url = 'http://localhost/rpc/api'
-login = ''
-passwd = ''
+url = 'http://@MYHOST@/rpc/api'
+login = '@MYLOGIN@'
+passwd = '@MYPASSWORD@'
 key = ''
 client = ''
 erratum = ''
@@ -78,7 +72,7 @@ def connect(url, login, passwd):
             passwd = os.getenv('SW_PASSWD', '')
         key = client.auth.login(login, passwd)
         log(1, "[+] Connected to %s" % url)
-    except Exception, e:
+    except Exception as e:
         log(1, "[-] Error connecting to %s: %s" % (url, e))
         sys.exit(1)
 
@@ -135,7 +129,7 @@ def createPackageList(client, key):
                 # this generates a hash of "package" objects (which contains "filename", etc.)
                 if not package['id'] in packages:
                     packages[package['id']] = packinfo
-    except Exception, e:
+    except Exception as e:
         log(10, "[-] Error creating PackageList: %s" % e, sys.stderr)
 
 
@@ -243,7 +237,7 @@ def createErratum(client, key, erratum, issue_date, erratainfo, keywords, packag
         client.errata.setDetails(key, erratum, {'issue_date': issue_date})
         if publish:
             client.errata.setDetails(key, erratum, {'cves': cves})
-    except Exception, e:
+    except Exception as e:
         log(10, "[-] Error creating errata: %s" % e, sys.stderr)
 
 
@@ -299,7 +293,7 @@ def parseXML(client, key, filename):
                               'solution': solution}
                 getDetailsErratum(client, key, dist_erratum, issue_date, erratainfo, keywords, newpackages, cves,
                                   publish, channels)
-    except Exception, e:
+    except Exception as e:
         log(10, "[-] Error parsing %s: %s" % (filename, e), sys.stderr)
 
 

@@ -9,6 +9,7 @@
 #
 # 2016-05-10    Initial version
 # 2018-03-12    Only parse new patches
+# 2019-06-06    Fix parser
 
 import re
 import urllib2
@@ -17,7 +18,6 @@ import errno
 import traceback
 import sys
 import xml.etree.cElementTree as XML
-
 
 class MessageAnnounce:
 
@@ -76,11 +76,12 @@ class MessageParser(object):
     BIN_PACKAGE_REGEX = '<dt><a href.*?>(?P<package_name>.*?)</a></dt>'
     DIST = "distribution \((?P<dist>.*?)\)"
     VERSION = "version (?P<version>\S+?)(?=\.?( |$))"
-    PKGINFO = "Package\s+:\s(?P<package_info>.*)"
-    MAILING_LIST = "^Mailing list:"
+    PKGINFO = "\s+Package\s+:\s(?P<package_info>.*)"
+    MAILING_LIST = "\s+Mailing list:"
     ERRATA_INFO = "_Subject_: \[SECURITY\] \[DSA (?P<errata_id>\d+)-(?P<errata_release>\d+)\] (?P<errata_name>\S+)( (?P<errata_other>.*))?$"
     DATE = "_Date_:\s+(?P<errata_date>.*?)(?=(\s\(.*\))?$)"
-    FROM = "_From_:\s+(?P<errata_from>.*)$"
+    FROM_NAME = "_From_:\s+(?P<errata_from_name>.*) &lt.*$"
+    FROM_MAIL = "_From_:\s+.*\[(?P<errata_from_mail>.*)\].*$"
     CVE = "(?P<cve>CVE-\d{4}-\d{4})"
     EOH = '-----BEGIN PGP SIGNED MESSAGE-----'
 
@@ -90,7 +91,8 @@ class MessageParser(object):
     mailing_list_re = re.compile(MAILING_LIST)
     erratum_info_re = re.compile(ERRATA_INFO)
     date_re = re.compile(DATE)
-    from_re = re.compile(FROM)
+    from_name_re = re.compile(FROM_NAME)
+    from_mail_re = re.compile(FROM_MAIL)
     cve_re = re.compile(CVE)
     version_re = re.compile(VERSION)
     header_re = re.compile(r'^.*\s+:\s+.*$')
@@ -108,8 +110,8 @@ class MessageParser(object):
             url_data = re.sub("\n", "", resp.read())
             resp.close()
         except urllib2.HTTPError as e:
-            print "Failed to fetch information for package '%s' in distribution '%s'" % (sourcepackage, dist)
-            print e.reason
+            print("Failed to fetch information for package '%s' in distribution '%s'" % (sourcepackage, dist))
+            print(e.reason)
             return packages
 
         # search for package list match
@@ -181,6 +183,7 @@ class MessageParser(object):
 
         return summary
 
+
     def processMessageCVEs(self, message_body):
         cves = list()
 
@@ -232,7 +235,8 @@ class MessageParser(object):
             erratum_info_match = MessageParser.erratum_info_re.search(line)
             eoh_match = MessageParser.eoh_re.search(line)
             date_match = MessageParser.date_re.search(line)
-            from_match = MessageParser.from_re.search(line)
+            from_name_match = MessageParser.from_name_re.search(line)
+            from_mail_match = MessageParser.from_mail_re.search(line)
 
             if eoh_match:
                 break
@@ -255,12 +259,13 @@ class MessageParser(object):
                 parsed_msg.errataDate = date_match.group('errata_date')
                 continue
 
-            if from_match:
-                parsed_msg.errataFrom = from_match.group('errata_from')
+            if from_name_match:
+                parsed_msg.errataFrom = from_name_match.group('errata_from_name')
+                parsed_msg.errataFrom += ' [' + from_mail_match.group('errata_from_mail') + ']'
                 continue
 
         if not subject_found:
-            print "Message not parseable"
+            print("Message not parseable")
             return None
 
         return parsed_msg
@@ -281,9 +286,9 @@ class MessageParser(object):
             parsed_msg.cves = self.processMessageCVEs(message_text)
 
             return parsed_msg
-        except Exception, e:
-            print "Failed to process message. Reason:"
-            print e
+        except Exception as e:
+            print("Failed to process message. Reason:")
+            print(e)
             traceback.print_exc(file=sys.stdout)
 
         return None
@@ -332,14 +337,14 @@ def main():
         announcements = list()
 
         if not files_to_parse:
-            print "No security announcements to parse today. Bye."
+            print("No security announcements to parse today. Bye.")
             sys.exit(0)
 
         if len(files_to_parse) != len(files):
-            print "Ignoring %d old security announcements already parsed." % (len(files) - len(files_to_parse))
+            print("Ignoring %d old security announcements already parsed." % (len(files) - len(files_to_parse)))
 
         for idx, f in enumerate(files_to_parse, start=1):
-            print "Processing patch %d/%d (file: %s)" % (idx, len(files_to_parse), f)
+            print("Processing patch %d/%d (file: %s)" % (idx, len(files_to_parse), f))
             message_parser = MessageFile(os.path.join(security_msg, f))
             errata = message_parser.parse()
             if errata:
@@ -349,7 +354,7 @@ def main():
 
         # if there are no advisories, just quit
         if not announcements:
-            print "No security announcements available or parseable. Bye."
+            print("No security announcements available or parseable. Bye.")
             sys.exit(0)
 
         # write the advisory XML
@@ -388,8 +393,8 @@ def main():
         xml = XML.ElementTree(opt)
         xml.write(security_msg + errata_file)
 
-    except Exception, e:
-        print "Failed to parse messages due to exception %s" % e
+    except Exception as e:
+        print("Failed to parse messages due to exception %s" % e)
         traceback.print_exc(file=sys.stdout)
         sys.exit(2)
 

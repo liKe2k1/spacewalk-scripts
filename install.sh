@@ -8,8 +8,8 @@
 # CHECK UPDATE
 #=================================================
 
-  update_source="https://raw.githubusercontent.com/liberodark/spacewalk-scripts/master/install.sh"
-  version="0.0.4"
+  update_source="https://raw.githubusercontent.com/like2k1/spacewalk-scripts/master/install.sh"
+  version="0.0.5"
 
   echo "Welcome on Spacewalk Script Install $version"
 
@@ -49,14 +49,17 @@ echo "Install Script for Spacewalk"
   if [ $? != 1 ]; then
 
     if [[ "$distribution" =~ .CentOS || "$distribution" = CentOS ]]; then
-      read -p "What is your user of spacewalk ?" user
-      read -p "What is your password of spacewalk ?" password
+      read -p "What is your fqdn of your spacewalk master? " host
+      read -p "What is your user of spacewalk ? "" user
+      read -p "What is your password of spacewalk ? " password
 
       yum install -y html2text git
       mkdir -p /home/errata/spacewalk-scripts/
       git clone https://github.com/liberodark/spacewalk-scripts/
       mv spacewalk-scripts /home/errata/spacewalk-scripts
       cp -a spacewalk_sync_debian.cron /etc/cron.daily/spacewalk_sync_debian.cron
+
+      sed -i "s@MYHOST@${host}@@g" /home/errata/spacewalk-scripts/errata-import-debian.py
       sed -i "s@MYLOGIN@${user}@@g" /home/errata/spacewalk-scripts/errata-import-debian.py
       sed -i "s@MYPASSWORD@${password}@@g" /home/errata/spacewalk-scripts/errata-import-debian.py
 
