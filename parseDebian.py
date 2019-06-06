@@ -78,9 +78,9 @@ class MessageParser(object):
     VERSION = "version (?P<version>\S+?)(?=\.?( |$))"
     PKGINFO = "Package\s+:\s(?P<package_info>.*)"
     MAILING_LIST = "^Mailing list:"
-    ERRATA_INFO = "Subject: \[SECURITY\] \[DSA (?P<errata_id>\d+)-(?P<errata_release>\d+)\] (?P<errata_name>\S+)( (?P<errata_other>.*))?$"
-    DATE = "Date:\s+(?P<errata_date>.*?)(?=(\s\(.*\))?$)"
-    FROM = "From:\s+(?P<errata_from>.*)$"
+    ERRATA_INFO = "_Subject_: \[SECURITY\] \[DSA (?P<errata_id>\d+)-(?P<errata_release>\d+)\] (?P<errata_name>\S+)( (?P<errata_other>.*))?$"
+    DATE = "_Date_:\s+(?P<errata_date>.*?)(?=(\s\(.*\))?$)"
+    FROM = "_From_:\s+(?P<errata_from>.*)$"
     CVE = "(?P<cve>CVE-\d{4}-\d{4})"
     EOH = '-----BEGIN PGP SIGNED MESSAGE-----'
 
